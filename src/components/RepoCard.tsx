@@ -33,7 +33,10 @@ interface RepoCardProps {
 }
 
 export function RepoCard({ repo, index }: RepoCardProps) {
-  const { name, description, html_url, stargazers_count, forks_count, language, topics, npm_package, npm_weekly_downloads } = repo
+  const { name, description, html_url, stargazers_count, forks_count, language, topics, npm_packages } = repo
+  const NPM_CAP = 2
+  const visiblePackages = npm_packages?.slice(0, NPM_CAP) ?? []
+  const overflowPackages = npm_packages?.slice(NPM_CAP) ?? []
   const { ref, tiltStyle, glareStyle, onMouseMove, onMouseLeave } = useTilt()
   const { ref: inViewRef, inView } = useInView()
 
@@ -115,20 +118,49 @@ export function RepoCard({ repo, index }: RepoCardProps) {
           </span>
         )}
 
-        {npm_package && (
+        {visiblePackages.map(pkg => (
           <a
-            href={`https://www.npmjs.com/package/${npm_package}`}
+            key={pkg.name}
+            href={`https://www.npmjs.com/package/${pkg.name}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
             className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors duration-150"
-            aria-label={`View ${npm_package} on npm`}
+            aria-label={`View ${pkg.name} on npm`}
           >
             <NpmIcon />
-            {npm_weekly_downloads !== undefined && (
-              <span>{formatDownloads(npm_weekly_downloads)}/wk</span>
+            {pkg.weekly_downloads !== undefined && (
+              <span>{formatDownloads(pkg.weekly_downloads)}/wk</span>
             )}
           </a>
+        ))}
+
+        {overflowPackages.length > 0 && (
+          <span
+            className="relative group/overflow"
+            onClick={e => e.stopPropagation()}
+          >
+            <span className="cursor-default text-slate-500 hover:text-slate-400 transition-colors duration-150">
+              +{overflowPackages.length}
+            </span>
+            <div className="absolute bottom-full left-0 mb-2 invisible group-hover/overflow:visible z-20 flex flex-col gap-1 bg-slate-900 border border-slate-700 rounded-lg p-2 min-w-max shadow-lg">
+              {overflowPackages.map(pkg => (
+                <a
+                  key={pkg.name}
+                  href={`https://www.npmjs.com/package/${pkg.name}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-red-400 hover:text-red-300 transition-colors duration-150 text-xs"
+                >
+                  <NpmIcon />
+                  <span>{pkg.name}</span>
+                  {pkg.weekly_downloads !== undefined && (
+                    <span className="text-slate-500">{formatDownloads(pkg.weekly_downloads)}/wk</span>
+                  )}
+                </a>
+              ))}
+            </div>
+          </span>
         )}
       </div>
     </a>

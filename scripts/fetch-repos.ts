@@ -19,12 +19,14 @@ if (!token) {
   process.exit(1)
 }
 
+const githubHeaders: Record<string, string> = {
+  Accept: 'application/vnd.github+json',
+  Authorization: `Bearer ${token}`,
+  'X-GitHub-Api-Version': '2022-11-28',
+}
+
 async function fetchAllRepos(): Promise<Repo[]> {
-  const headers: Record<string, string> = {
-    Accept: 'application/vnd.github+json',
-    Authorization: `Bearer ${token}`,
-    'X-GitHub-Api-Version': '2022-11-28',
-  }
+  const headers = githubHeaders
 
   let page = 1
   const all: Repo[] = []
@@ -87,10 +89,15 @@ function chunk<T>(arr: T[], n: number): T[][] {
   return out
 }
 
-async function npmPackageExists(name: string): Promise<boolean> {
+// Returns true only if the package exists on npm AND its repository URL references
+// this GitHub user — prevents matching unrelated packages with the same name.
+async function npmPackageOwnedByUser(name: string): Promise<boolean> {
   try {
-    const res = await fetch(`https://registry.npmjs.org/${encodeURIComponent(name)}`, { method: 'HEAD' })
-    return res.status === 200
+    const res = await fetch(`https://registry.npmjs.org/${encodeURIComponent(name)}`)
+    if (res.status !== 200) return false
+    const data = await res.json() as { repository?: { url?: string } }
+    const repoUrl = data.repository?.url ?? ''
+    return repoUrl.toLowerCase().includes(`github.com/${username.toLowerCase()}/`)
   } catch {
     return false
   }
@@ -107,35 +114,59 @@ async function fetchWeeklyDownloads(name: string): Promise<number | null> {
   }
 }
 
-async function resolveNpmPackageName(repoName: string): Promise<string | null> {
-  if (await npmPackageExists(repoName)) return repoName
+// Excluded path segments — skip package.json files under these directories
+const EXCLUDED_PATHS = ['node_modules/', 'vendor/', 'fixtures/', '__tests__/', '.git/']
 
-  try {
-    const res = await fetch(
-      `https://raw.githubusercontent.com/${username}/${repoName}/HEAD/package.json`
-    )
-    if (res.ok) {
-      const pkg = await res.json() as { name?: string }
-      if (pkg.name && pkg.name !== repoName && await npmPackageExists(pkg.name)) {
-        return pkg.name
-      }
-    }
-  } catch {
-    // no package.json or parse error — that's fine
+async function findNpmPackagesForRepo(repoName: string): Promise<Array<{ name: string; weekly_downloads?: number }>> {
+  // Fetch the full git tree to locate all package.json files
+  const treeRes = await fetch(
+    `https://api.github.com/repos/${username}/${repoName}/git/trees/HEAD?recursive=1`,
+    { headers: githubHeaders }
+  )
+  if (!treeRes.ok) return []
+
+  const tree = await treeRes.json() as {
+    tree: Array<{ path: string; type: string }>
   }
 
-  return null
+  const packageJsonPaths = tree.tree
+    .filter(item =>
+      item.type === 'blob' &&
+      (item.path === 'package.json' || item.path.endsWith('/package.json')) &&
+      !EXCLUDED_PATHS.some(ex => item.path.includes(ex))
+    )
+    .map(item => item.path)
+
+  const packages: Array<{ name: string; weekly_downloads?: number }> = []
+
+  for (const pkgPath of packageJsonPaths) {
+    try {
+      const res = await fetch(
+        `https://raw.githubusercontent.com/${username}/${repoName}/HEAD/${pkgPath}`
+      )
+      if (!res.ok) continue
+      const pkg = await res.json() as { name?: string; private?: boolean }
+      if (!pkg.name || pkg.private) continue
+
+      if (await npmPackageOwnedByUser(pkg.name)) {
+        const downloads = await fetchWeeklyDownloads(pkg.name)
+        packages.push({
+          name: pkg.name,
+          ...(downloads !== null ? { weekly_downloads: downloads } : {}),
+        })
+      }
+    } catch {
+      // unparseable package.json — skip
+    }
+  }
+
+  return packages
 }
 
 async function enrichOne(repo: Repo): Promise<Repo> {
-  const packageName = await resolveNpmPackageName(repo.name)
-  if (!packageName) return repo
-  const downloads = await fetchWeeklyDownloads(packageName)
-  return {
-    ...repo,
-    npm_package: packageName,
-    ...(downloads !== null ? { npm_weekly_downloads: downloads } : {}),
-  }
+  const packages = await findNpmPackagesForRepo(repo.name)
+  if (packages.length === 0) return repo
+  return { ...repo, npm_packages: packages }
 }
 
 async function enrichWithNpm(repos: Repo[]): Promise<Repo[]> {
@@ -149,7 +180,7 @@ async function enrichWithNpm(repos: Repo[]): Promise<Repo[]> {
 
 const repos = await fetchAllRepos()
 const enriched = await enrichWithNpm(repos)
-const npmCount = enriched.filter(r => r.npm_package).length
+const npmCount = enriched.filter(r => r.npm_packages?.length).length
 const outDir = join(__dirname, '../src/data')
 mkdirSync(outDir, { recursive: true })
 writeFileSync(join(outDir, 'repos.json'), JSON.stringify(enriched, null, 2))
