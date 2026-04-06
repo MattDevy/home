@@ -133,7 +133,7 @@ export function RepoCard({ repo, index }: RepoCardProps) {
               <span>{formatDownloads(pkg.weekly_downloads)}/wk</span>
             )}
             {pkg.total_downloads !== undefined && (
-              <span className="text-slate-500">· {formatDownloads(pkg.total_downloads)}</span>
+              <span className="text-slate-500">· {formatDownloads(pkg.total_downloads)} total</span>
             )}
           </a>
         ))}
@@ -161,7 +161,7 @@ export function RepoCard({ repo, index }: RepoCardProps) {
                     <span className="text-slate-500">{formatDownloads(pkg.weekly_downloads)}/wk</span>
                   )}
                   {pkg.total_downloads !== undefined && (
-                    <span className="text-slate-500">· {formatDownloads(pkg.total_downloads)}</span>
+                    <span className="text-slate-500">· {formatDownloads(pkg.total_downloads)} total</span>
                   )}
                 </a>
               ))}
