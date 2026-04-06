@@ -1,11 +1,11 @@
 export const config = {
   name: 'Matt Devy',
   title: 'Senior Software Engineer',
-  bio: 'Building things on the web.',
+  bio: "Senior Software Engineer with a background in Cyber Security and Open Source. Focused on Go, Rust, and TypeScript — primarily backend, but comfortable across the full stack. I enjoy automation and building things that last.",
   github: 'MattDevy',
   social: {
     github: 'https://github.com/MattDevy',
-    // linkedin: 'https://linkedin.com/in/...',
+    linkedin: 'https://linkedin.com/in/matthew-devy',
     // email: 'mailto:...',
     // buyMeACoffee: 'https://buymeacoffee.com/...',
   },
