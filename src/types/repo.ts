@@ -7,4 +7,6 @@ export interface Repo {
   language: string | null
   topics: string[]
   updated_at: string
+  npm_package?: string
+  npm_weekly_downloads?: number
 }

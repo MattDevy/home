@@ -3,6 +3,18 @@ import { languageColor } from './Hero.tsx'
 import { useTilt } from '../hooks/useTilt.ts'
 import { useInView } from '../hooks/useInView.ts'
 
+const NpmIcon = () => (
+  <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
+    <path d="M0 0h16v16H0V0zm1.5 1.5v13h13v-13h-13zm2 2h9v9h-2.5V6H8v6.5H3.5v-9z" />
+  </svg>
+)
+
+function formatDownloads(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
+  return n.toString()
+}
+
 const StarIcon = () => (
   <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
     <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z" />
@@ -21,7 +33,7 @@ interface RepoCardProps {
 }
 
 export function RepoCard({ repo, index }: RepoCardProps) {
-  const { name, description, html_url, stargazers_count, forks_count, language, topics } = repo
+  const { name, description, html_url, stargazers_count, forks_count, language, topics, npm_package, npm_weekly_downloads } = repo
   const { ref, tiltStyle, glareStyle, onMouseMove, onMouseLeave } = useTilt()
   const { ref: inViewRef, inView } = useInView()
 
@@ -101,6 +113,22 @@ export function RepoCard({ repo, index }: RepoCardProps) {
             <ForkIcon />
             {forks_count.toLocaleString()}
           </span>
+        )}
+
+        {npm_package && (
+          <a
+            href={`https://www.npmjs.com/package/${npm_package}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors duration-150"
+            aria-label={`View ${npm_package} on npm`}
+          >
+            <NpmIcon />
+            {npm_weekly_downloads !== undefined && (
+              <span>{formatDownloads(npm_weekly_downloads)}/wk</span>
+            )}
+          </a>
         )}
       </div>
     </a>

@@ -81,8 +81,76 @@ async function fetchAllRepos(): Promise<Repo[]> {
   return all
 }
 
+function chunk<T>(arr: T[], n: number): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n))
+  return out
+}
+
+async function npmPackageExists(name: string): Promise<boolean> {
+  try {
+    const res = await fetch(`https://registry.npmjs.org/${encodeURIComponent(name)}`, { method: 'HEAD' })
+    return res.status === 200
+  } catch {
+    return false
+  }
+}
+
+async function fetchWeeklyDownloads(name: string): Promise<number | null> {
+  try {
+    const res = await fetch(`https://api.npmjs.org/downloads/point/last-week/${encodeURIComponent(name)}`)
+    if (!res.ok) return null
+    const data = await res.json() as { downloads?: number }
+    return data.downloads ?? null
+  } catch {
+    return null
+  }
+}
+
+async function resolveNpmPackageName(repoName: string): Promise<string | null> {
+  if (await npmPackageExists(repoName)) return repoName
+
+  try {
+    const res = await fetch(
+      `https://raw.githubusercontent.com/${username}/${repoName}/HEAD/package.json`
+    )
+    if (res.ok) {
+      const pkg = await res.json() as { name?: string }
+      if (pkg.name && pkg.name !== repoName && await npmPackageExists(pkg.name)) {
+        return pkg.name
+      }
+    }
+  } catch {
+    // no package.json or parse error — that's fine
+  }
+
+  return null
+}
+
+async function enrichOne(repo: Repo): Promise<Repo> {
+  const packageName = await resolveNpmPackageName(repo.name)
+  if (!packageName) return repo
+  const downloads = await fetchWeeklyDownloads(packageName)
+  return {
+    ...repo,
+    npm_package: packageName,
+    ...(downloads !== null ? { npm_weekly_downloads: downloads } : {}),
+  }
+}
+
+async function enrichWithNpm(repos: Repo[]): Promise<Repo[]> {
+  const enriched: Repo[] = []
+  for (const batch of chunk(repos, 5)) {
+    const results = await Promise.all(batch.map(enrichOne))
+    enriched.push(...results)
+  }
+  return enriched
+}
+
 const repos = await fetchAllRepos()
+const enriched = await enrichWithNpm(repos)
+const npmCount = enriched.filter(r => r.npm_package).length
 const outDir = join(__dirname, '../src/data')
 mkdirSync(outDir, { recursive: true })
-writeFileSync(join(outDir, 'repos.json'), JSON.stringify(repos, null, 2))
-console.log(`Wrote ${repos.length} repos to src/data/repos.json`)
+writeFileSync(join(outDir, 'repos.json'), JSON.stringify(enriched, null, 2))
+console.log(`Wrote ${enriched.length} repos to src/data/repos.json (${npmCount} with npm data)`)
