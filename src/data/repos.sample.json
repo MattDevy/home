@@ -1,0 +1,12 @@
+[
+  {
+    "name": "example-project",
+    "description": "An example project — run npm run fetch-repos to populate with real data.",
+    "html_url": "https://github.com/MattDevy/example-project",
+    "stargazers_count": 42,
+    "forks_count": 7,
+    "language": "TypeScript",
+    "topics": ["typescript", "react"],
+    "updated_at": "2026-04-06T00:00:00Z"
+  }
+]
