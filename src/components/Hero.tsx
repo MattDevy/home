@@ -71,13 +71,20 @@ export function Hero() {
   return (
     <section className="pt-24 pb-16 px-6">
       <div className="max-w-3xl mx-auto">
-        <h1
-          ref={headingRef as React.RefObject<HTMLHeadingElement>}
-          className={`text-4xl sm:text-5xl font-bold text-white tracking-tight mb-3${headingInView ? ' animate-fade-up' : ''}`}
+        <div
+          ref={headingRef as unknown as React.RefObject<HTMLDivElement>}
+          className={`flex items-center gap-5 mb-6${headingInView ? ' animate-fade-up' : ''}`}
           style={headingInView ? { animationDelay: '0ms' } : { opacity: 0 }}
         >
-          {name}
-        </h1>
+          <img
+            src="avatar.svg"
+            alt={name}
+            className="w-16 h-16 rounded-full ring-2 ring-sky-500/30 shrink-0"
+          />
+          <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
+            {name}
+          </h1>
+        </div>
 
         <p
           ref={titleRef as React.RefObject<HTMLParagraphElement>}
