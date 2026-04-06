@@ -3,6 +3,7 @@ import { RepoGrid } from './components/RepoGrid.tsx'
 import { Footer } from './components/Footer.tsx'
 import { GradientBackground } from './components/GradientBackground.tsx'
 import { ParticleCanvas } from './components/ParticleCanvas.tsx'
+import { BuyMeCoffeeButton } from './components/BuyMeCoffeeButton.tsx'
 import reposData from './data/repos.json'
 import type { Repo } from './types/repo.ts'
 
@@ -18,6 +19,7 @@ export default function App() {
         <RepoGrid repos={repos} />
         <Footer />
       </div>
+      <BuyMeCoffeeButton />
     </div>
   )
 }
