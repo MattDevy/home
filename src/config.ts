@@ -1,6 +1,6 @@
 export const config = {
   name: 'Matt Devy',
-  title: 'Software Engineer',
+  title: 'Senior Software Engineer',
   bio: 'Building things on the web.',
   github: 'MattDevy',
   social: {
