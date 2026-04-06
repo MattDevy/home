@@ -13,7 +13,7 @@ export const config = {
    * Optionally list repo slugs here to control ordering/filtering in the
    * showcase. If empty, all public non-fork repos are shown sorted by stars.
    */
-  featuredRepos: [] as string[],
+  featuredRepos: ['pi-continuous-learning'] as string[],
 }
 
 export type SocialLinks = typeof config.social
