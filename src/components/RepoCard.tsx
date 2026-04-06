@@ -34,9 +34,9 @@ interface RepoCardProps {
 
 export function RepoCard({ repo, index }: RepoCardProps) {
   const { name, description, html_url, stargazers_count, forks_count, language, topics, npm_packages } = repo
-  const NPM_CAP = 2
-  const visiblePackages = npm_packages?.slice(0, NPM_CAP) ?? []
-  const overflowPackages = npm_packages?.slice(NPM_CAP) ?? []
+  const totalWeekly = npm_packages?.reduce((s, p) => s + (p.weekly_downloads ?? 0), 0)
+  const grandTotal  = npm_packages?.reduce((s, p) => s + (p.total_downloads  ?? 0), 0)
+  const multiPackage = npm_packages && npm_packages.length > 1
   const { ref, tiltStyle, glareStyle, onMouseMove, onMouseLeave } = useTilt()
   const { ref: inViewRef, inView } = useInView()
 
@@ -118,55 +118,46 @@ export function RepoCard({ repo, index }: RepoCardProps) {
           </span>
         )}
 
-        {visiblePackages.map(pkg => (
-          <a
-            key={pkg.name}
-            href={`https://www.npmjs.com/package/${pkg.name}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
-            className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors duration-150"
-            aria-label={`View ${pkg.name} on npm`}
-          >
-            <NpmIcon />
-            {pkg.weekly_downloads !== undefined && (
-              <span>{formatDownloads(pkg.weekly_downloads)}/wk</span>
-            )}
-            {pkg.total_downloads !== undefined && (
-              <span className="text-slate-500">· {formatDownloads(pkg.total_downloads)} total</span>
-            )}
-          </a>
-        ))}
-
-        {overflowPackages.length > 0 && (
-          <span
-            className="relative group/overflow"
-            onClick={e => e.stopPropagation()}
-          >
-            <span className="cursor-default text-slate-500 hover:text-slate-400 transition-colors duration-150">
-              +{overflowPackages.length}
+        {npm_packages && npm_packages.length > 0 && (
+          multiPackage ? (
+            <span
+              className="relative group/npm flex items-center gap-1 text-red-400 cursor-default"
+              onClick={e => e.stopPropagation()}
+            >
+              <NpmIcon />
+              {!!totalWeekly && <span>{formatDownloads(totalWeekly)}/wk</span>}
+              {!!grandTotal  && <span className="text-slate-500">· {formatDownloads(grandTotal)} total</span>}
+              <div className="absolute bottom-full left-0 mb-2 invisible group-hover/npm:visible z-20 flex flex-col gap-1 bg-slate-900 border border-slate-700 rounded-lg p-2 min-w-max shadow-lg text-xs">
+                {npm_packages.map(pkg => (
+                  <a
+                    key={pkg.name}
+                    href={`https://www.npmjs.com/package/${pkg.name}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-red-400 hover:text-red-300 transition-colors duration-150"
+                  >
+                    <NpmIcon />
+                    <span>{pkg.name}</span>
+                    {pkg.weekly_downloads !== undefined && <span className="text-slate-500">{formatDownloads(pkg.weekly_downloads)}/wk</span>}
+                    {pkg.total_downloads  !== undefined && <span className="text-slate-500">· {formatDownloads(pkg.total_downloads)} total</span>}
+                  </a>
+                ))}
+              </div>
             </span>
-            <div className="absolute bottom-full left-0 mb-2 invisible group-hover/overflow:visible z-20 flex flex-col gap-1 bg-slate-900 border border-slate-700 rounded-lg p-2 min-w-max shadow-lg">
-              {overflowPackages.map(pkg => (
-                <a
-                  key={pkg.name}
-                  href={`https://www.npmjs.com/package/${pkg.name}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-red-400 hover:text-red-300 transition-colors duration-150 text-xs"
-                >
-                  <NpmIcon />
-                  <span>{pkg.name}</span>
-                  {pkg.weekly_downloads !== undefined && (
-                    <span className="text-slate-500">{formatDownloads(pkg.weekly_downloads)}/wk</span>
-                  )}
-                  {pkg.total_downloads !== undefined && (
-                    <span className="text-slate-500">· {formatDownloads(pkg.total_downloads)} total</span>
-                  )}
-                </a>
-              ))}
-            </div>
-          </span>
+          ) : (
+            <a
+              href={`https://www.npmjs.com/package/${npm_packages[0].name}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors duration-150"
+              aria-label={`View ${npm_packages[0].name} on npm`}
+            >
+              <NpmIcon />
+              {!!totalWeekly && <span>{formatDownloads(totalWeekly)}/wk</span>}
+              {!!grandTotal  && <span className="text-slate-500">· {formatDownloads(grandTotal)} total</span>}
+            </a>
+          )
         )}
       </div>
     </a>
