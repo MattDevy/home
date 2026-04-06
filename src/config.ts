@@ -7,7 +7,7 @@ export const config = {
     github: 'https://github.com/MattDevy',
     linkedin: 'https://linkedin.com/in/matthew-devy',
     // email: 'mailto:...',
-    // buyMeACoffee: 'https://buymeacoffee.com/...',
+    buyMeACoffee: 'https://buymeacoffee.com/MattDevy',
   },
   /**
    * Optionally list repo slugs here to control ordering/filtering in the
