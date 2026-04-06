@@ -103,9 +103,9 @@ async function npmPackageOwnedByUser(name: string): Promise<boolean> {
   }
 }
 
-async function fetchWeeklyDownloads(name: string): Promise<number | null> {
+async function fetchDownloads(name: string, period: string): Promise<number | null> {
   try {
-    const res = await fetch(`https://api.npmjs.org/downloads/point/last-week/${encodeURIComponent(name)}`)
+    const res = await fetch(`https://api.npmjs.org/downloads/point/${period}/${encodeURIComponent(name)}`)
     if (!res.ok) return null
     const data = await res.json() as { downloads?: number }
     return data.downloads ?? null
@@ -113,6 +113,8 @@ async function fetchWeeklyDownloads(name: string): Promise<number | null> {
     return null
   }
 }
+
+const today = new Date().toISOString().slice(0, 10)
 
 // Excluded path segments — skip package.json files under these directories
 const EXCLUDED_PATHS = ['node_modules/', 'vendor/', 'fixtures/', '__tests__/', '.git/']
@@ -149,10 +151,14 @@ async function findNpmPackagesForRepo(repoName: string): Promise<Array<{ name: s
       if (!pkg.name || pkg.private) continue
 
       if (await npmPackageOwnedByUser(pkg.name)) {
-        const downloads = await fetchWeeklyDownloads(pkg.name)
+        const [weekly, total] = await Promise.all([
+          fetchDownloads(pkg.name, 'last-week'),
+          fetchDownloads(pkg.name, `2005-01-01:${today}`),
+        ])
         packages.push({
           name: pkg.name,
-          ...(downloads !== null ? { weekly_downloads: downloads } : {}),
+          ...(weekly !== null ? { weekly_downloads: weekly } : {}),
+          ...(total !== null ? { total_downloads: total } : {}),
         })
       }
     } catch {
