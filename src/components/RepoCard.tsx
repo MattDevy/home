@@ -1,5 +1,7 @@
 import type { Repo } from '../types/repo.ts'
 import { languageColor } from './Hero.tsx'
+import { useTilt } from '../hooks/useTilt.ts'
+import { useInView } from '../hooks/useInView.ts'
 
 const StarIcon = () => (
   <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
@@ -15,19 +17,42 @@ const ForkIcon = () => (
 
 interface RepoCardProps {
   repo: Repo
+  index: number
 }
 
-export function RepoCard({ repo }: RepoCardProps) {
+export function RepoCard({ repo, index }: RepoCardProps) {
   const { name, description, html_url, stargazers_count, forks_count, language, topics } = repo
+  const { ref, tiltStyle, glareStyle, onMouseMove, onMouseLeave } = useTilt()
+  const { ref: inViewRef, inView } = useInView()
+
+  // Merge the two refs
+  const setRefs = (el: HTMLAnchorElement | null) => {
+    (ref as React.MutableRefObject<HTMLAnchorElement | null>).current = el;
+    (inViewRef as React.MutableRefObject<HTMLElement | null>).current = el
+  }
 
   return (
     <a
+      ref={setRefs}
       href={html_url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex flex-col p-5 rounded-xl bg-slate-800/60 border border-slate-700/50 hover:border-sky-500/50 hover:bg-slate-800 transition-all duration-150"
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      className={`group relative flex flex-col p-5 rounded-xl bg-slate-800/60 border border-slate-700/50 hover:border-sky-500/50 hover:bg-slate-800 overflow-hidden${inView ? ' animate-fade-up' : ''}`}
+      style={{
+        ...tiltStyle,
+        ...(inView ? { animationDelay: `${index * 80}ms` } : { opacity: 0 }),
+      }}
     >
-      <div className="flex-1">
+      {/* Glare overlay */}
+      <div
+        className="absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-300"
+        style={glareStyle}
+        aria-hidden="true"
+      />
+
+      <div className="flex-1 relative">
         <h3 className="text-white font-semibold text-sm mb-1.5 group-hover:text-sky-400 transition-colors duration-150 truncate">
           {name}
         </h3>
@@ -52,7 +77,7 @@ export function RepoCard({ repo }: RepoCardProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-4 mt-2 text-slate-500 text-xs">
+      <div className="flex items-center gap-4 mt-2 text-slate-500 text-xs relative">
         {language && (
           <span className="flex items-center gap-1.5">
             <span

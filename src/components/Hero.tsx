@@ -1,4 +1,6 @@
 import { config } from '../config.ts'
+import { useTypewriter } from '../hooks/useTypewriter.ts'
+import { useInView } from '../hooks/useInView.ts'
 
 // Language colour map — extend as needed
 const LANG_COLORS: Record<string, string> = {
@@ -19,6 +21,13 @@ const LANG_COLORS: Record<string, string> = {
 export function languageColor(lang: string): string {
   return LANG_COLORS[lang] ?? '#8b8b8b'
 }
+
+const TYPEWRITER_PHRASES = [
+  'Building things for the web.',
+  'Open source enthusiast.',
+  'Always learning.',
+  'Making ideas ship.',
+]
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5" aria-hidden="true">
@@ -51,17 +60,59 @@ const CoffeeIcon = () => (
 
 export function Hero() {
   const { name, title, bio, social } = config
+  const { text, showCursor } = useTypewriter(TYPEWRITER_PHRASES)
+
+  const { ref: headingRef, inView: headingInView } = useInView()
+  const { ref: titleRef, inView: titleInView } = useInView()
+  const { ref: typewriterRef, inView: typewriterInView } = useInView()
+  const { ref: bioRef, inView: bioInView } = useInView()
+  const { ref: linksRef, inView: linksInView } = useInView()
 
   return (
     <section className="pt-24 pb-16 px-6">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight mb-3">
+        <h1
+          ref={headingRef as React.RefObject<HTMLHeadingElement>}
+          className={`text-4xl sm:text-5xl font-bold text-white tracking-tight mb-3${headingInView ? ' animate-fade-up' : ''}`}
+          style={headingInView ? { animationDelay: '0ms' } : { opacity: 0 }}
+        >
           {name}
         </h1>
-        <p className="text-lg text-sky-400 font-medium mb-5">{title}</p>
-        <p className="text-slate-400 text-base leading-relaxed max-w-xl mb-8">{bio}</p>
 
-        <div className="flex flex-wrap gap-3">
+        <p
+          ref={titleRef as React.RefObject<HTMLParagraphElement>}
+          className={`text-lg text-sky-400 font-medium mb-3${titleInView ? ' animate-fade-up' : ''}`}
+          style={titleInView ? { animationDelay: '100ms' } : { opacity: 0 }}
+        >
+          {title}
+        </p>
+
+        <p
+          ref={typewriterRef as React.RefObject<HTMLParagraphElement>}
+          className={`text-slate-300 text-base font-mono mb-5 h-6${typewriterInView ? ' animate-fade-up' : ''}`}
+          style={typewriterInView ? { animationDelay: '180ms' } : { opacity: 0 }}
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {text}
+          {showCursor && (
+            <span className="inline-block w-0.5 h-4 bg-sky-400 ml-0.5 align-middle animate-pulse" />
+          )}
+        </p>
+
+        <p
+          ref={bioRef as React.RefObject<HTMLParagraphElement>}
+          className={`text-slate-400 text-base leading-relaxed max-w-xl mb-8${bioInView ? ' animate-fade-up' : ''}`}
+          style={bioInView ? { animationDelay: '260ms' } : { opacity: 0 }}
+        >
+          {bio}
+        </p>
+
+        <div
+          ref={linksRef as React.RefObject<HTMLDivElement>}
+          className={`flex flex-wrap gap-3${linksInView ? ' animate-fade-up' : ''}`}
+          style={linksInView ? { animationDelay: '340ms' } : { opacity: 0 }}
+        >
           {'github' in social && social.github && (
             <SocialLink href={social.github} label="GitHub">
               <GithubIcon />

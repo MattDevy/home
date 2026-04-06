@@ -30,8 +30,8 @@ export function RepoGrid({ repos }: RepoGridProps) {
           <p className="text-slate-500 text-sm">No repositories found.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {ordered.map((repo) => (
-              <RepoCard key={repo.name} repo={repo} />
+            {ordered.map((repo, index) => (
+              <RepoCard key={repo.name} repo={repo} index={index} />
             ))}
           </div>
         )}
